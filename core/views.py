@@ -68,11 +68,11 @@ def pagina_ponto(request):
     bolsistas = Bolsista.objects.all()
 
     if request.method == 'POST':
-        senha = request.POST.get('senha')
+        # senha = request.POST.get('senha')
 
-        if senha != settings.SENHA_PONTO:
-            messages.error(request, 'Senha incorreta.')
-            return redirect('core:pagina_ponto')
+        # if senha != settings.SENHA_PONTO:
+        #    messages.error(request, 'Senha incorreta.')
+        #    return redirect('core:pagina_ponto')
 
         id_bolsista = request.POST.get('id_bolsista')
         try:
