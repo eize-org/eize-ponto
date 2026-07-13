@@ -81,7 +81,12 @@ def pagina_ponto(request):
 
             ultima_sessao = SessaoTrabalho.objects.filter(bolsista=bolsista).order_by('-entrada').first()
             if ultima_sessao and (timezone.now() - ultima_sessao.entrada) < timedelta(seconds=5):
-                messages.error(request, 'Aguarde alguns segundos antes de bater o ponto novamente.')
+                acao = 'saída' if ultima_sessao.saida else 'entrada'
+                messages.error(
+                    request,
+                    f'Aguarde alguns segundos antes de bater o ponto novamente. '
+                    f'A {acao} de {bolsista.nome} já foi registrada.'
+                )
                 return redirect('core:pagina_ponto')
 
             if sessao_aberta is None:
@@ -94,7 +99,7 @@ def pagina_ponto(request):
                 sessao_aberta.min_trabalhados = trabalhou
                 sessao_aberta.diferenca_min = trabalhou - MINUTOS_ESPERADOS
                 sessao_aberta.save()
-                messages.success(request, f'Saída de {bolsista.nome} registrada!')
+                messages.warning(request, f'Saída de {bolsista.nome} registrada!')
 
         except Bolsista.DoesNotExist:
             messages.error(request, 'Bolsista não encontrado.')
