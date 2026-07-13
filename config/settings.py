@@ -6,7 +6,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('DJANGO_SECRET_KEY')
 DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
-# SENHA_PONTO = config('SENHA_PONTO')
 
 ALLOWED_IPS = config('ALLOWED_IPS', default='').split(',')
 
