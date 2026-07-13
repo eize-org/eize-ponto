@@ -56,14 +56,15 @@
                             </div>
                             <div class="modal-body">
                                 Confirma o registro de ponto para <strong>{{ bolsista.nome }}</strong>?
-                                <!-- <input type="password" id="senha-{{ bolsista.id }}" class="form-control" placeholder="Digite a senha"> -->
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                                 <form method="post">
                                     {% csrf_token %}
                                     <input type="hidden" name="id_bolsista" value="{{ bolsista.id }}">
-                                    <button type="submit" class="btn btn-primary">Confirmar</button>
+                                    <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.form.submit();">
+                                        Confirmar
+                                    </button>
                                 </form>
                             </div>
                         </div>

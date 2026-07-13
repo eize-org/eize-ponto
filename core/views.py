@@ -4,9 +4,10 @@ from rest_framework import status
 from django.utils import timezone
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.db import transaction
+from datetime import timedelta
 from .models import Bolsista, SessaoTrabalho, MINUTOS_ESPERADOS
 from .serializers import BolsistaSerializer, SessaoTrabalhoSerializer
-from django.conf import settings
 
 @api_view(['GET'])
 def lista_bolsistas(request):
@@ -64,20 +65,24 @@ def sessoes_bolsista(request, pk):
     serializer = SessaoTrabalhoSerializer(sessoes, many=True)
     return Response(serializer.data)
 
+
+@transaction.atomic
 def pagina_ponto(request):
     bolsistas = Bolsista.objects.all()
 
     if request.method == 'POST':
-        # senha = request.POST.get('senha')
-
-        # if senha != settings.SENHA_PONTO:
-        #    messages.error(request, 'Senha incorreta.')
-        #    return redirect('core:pagina_ponto')
-
         id_bolsista = request.POST.get('id_bolsista')
         try:
-            bolsista = Bolsista.objects.get(pk=id_bolsista)
-            sessao_aberta = bolsista.sessao_aberta()
+            bolsista = Bolsista.objects.select_for_update().get(pk=id_bolsista)
+
+            sessao_aberta = SessaoTrabalho.objects.select_for_update().filter(
+                bolsista=bolsista, saida__isnull=True
+            ).first()
+
+            ultima_sessao = SessaoTrabalho.objects.filter(bolsista=bolsista).order_by('-entrada').first()
+            if ultima_sessao and (timezone.now() - ultima_sessao.entrada) < timedelta(seconds=5):
+                messages.error(request, 'Aguarde alguns segundos antes de bater o ponto novamente.')
+                return redirect('core:pagina_ponto')
 
             if sessao_aberta is None:
                 SessaoTrabalho.objects.create(bolsista=bolsista)
@@ -89,7 +94,7 @@ def pagina_ponto(request):
                 sessao_aberta.min_trabalhados = trabalhou
                 sessao_aberta.diferenca_min = trabalhou - MINUTOS_ESPERADOS
                 sessao_aberta.save()
-                messages.success(request, f'Saída de {bolsista.nome} registrada!', extra_tags='saida')
+                messages.success(request, f'Saída de {bolsista.nome} registrada!')
 
         except Bolsista.DoesNotExist:
             messages.error(request, 'Bolsista não encontrado.')
