@@ -80,14 +80,19 @@ def pagina_ponto(request):
             ).first()
 
             ultima_sessao = SessaoTrabalho.objects.filter(bolsista=bolsista).order_by('-entrada').first()
-            if ultima_sessao and (timezone.now() - ultima_sessao.entrada) < timedelta(seconds=5):
-                acao = 'saída' if ultima_sessao.saida else 'entrada'
-                messages.error(
-                    request,
-                    f'Aguarde alguns segundos antes de bater o ponto novamente. '
-                    f'A {acao} de {bolsista.nome} já foi registrada.'
-                )
-                return redirect('core:pagina_ponto')
+
+            if ultima_sessao:
+                # Considera o horário do último evento: saída se já ocorreu, senão a entrada
+                ultimo_evento = ultima_sessao.saida or ultima_sessao.entrada
+
+                if (timezone.now() - ultimo_evento) < timedelta(seconds=5):
+                    acao = 'saída' if ultima_sessao.saida else 'entrada'
+                    messages.error(
+                        request,
+                        f'Aguarde alguns segundos antes de bater o ponto novamente. '
+                        f'A {acao} de {bolsista.nome} já foi registrada.'
+                    )
+                    return redirect('core:pagina_ponto')
 
             if sessao_aberta is None:
                 SessaoTrabalho.objects.create(bolsista=bolsista)
