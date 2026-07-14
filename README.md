@@ -4,13 +4,12 @@ O pOnto é um sistema de controle de ponto simples, gratuito e de código aberto
 
 ## Funcionalidades
 
-- Registro de entrada e saída por empregado
-- Cálculo automático de horas trabalhadas
+- Registro de entrada e saída por bolsista, com um clique e confirmação via modal
+- Cálculo automático de minutos trabalhados
 - Controle de diferença em relação à jornada esperada (4 horas)
-- Confirmação via modal antes de registrar o ponto
-- Senha única para validar o registro
-- Painel administrativo completo para o gerente
-- Restrição de acesso por IP
+- Proteção contra duplicidade de registros (cliques duplos ou requisições simultâneas)
+- Painel administrativo completo para o gerente, incluindo histórico de sessões
+- Restrição de acesso por IP — apenas máquinas autorizadas conseguem abrir o sistema
 - Scripts de configuração e inicialização para Windows
 
 ## Tecnologias
@@ -40,7 +39,6 @@ setup.bat
 ```
 
 Durante o setup você será solicitado a:
-- Definir a senha para bater o ponto
 - Informar os IPs das máquinas que terão acesso ao sistema
 - Criar o usuário administrador (gerente)
 
@@ -48,6 +46,20 @@ Durante o setup você será solicitado a:
 ```
 iniciar.bat
 ```
+
+## Como usar
+
+**Bater o ponto (bolsista):**
+1. Acesse a página inicial pelo navegador
+2. Clique no botão com o seu nome
+3. Confirme o registro na janela que aparece
+
+O sistema alterna automaticamente entre entrada e saída: o primeiro clique do dia registra a entrada, o clique seguinte registra a saída.
+
+Uma mensagem de confirmação aparece após cada registro — verde para entrada, laranja para saída. Se você tentar bater o ponto novamente muito rápido (menos de 5 segundos), o sistema bloqueia e avisa qual ação já foi registrada, evitando duplicidade.
+
+**Gerenciar bolsistas e acompanhar registros (gerente):**
+Acesse o painel administrativo em `/admin/` com o usuário criado durante o setup. Por lá é possível cadastrar bolsistas, visualizar todas as sessões de trabalho e conferir os minutos trabalhados e a diferença em relação à jornada esperada.
 
 ## Acesso
 
@@ -70,37 +82,40 @@ Para abrir o Prompt de Comando rapidamente pressione `Win + R`, digite `cmd` e p
 
 > **Dica:** Computadores conectados via cabo tendem a ter IPs fixos na rede local, o que evita a necessidade de atualizar o `.env` com frequência. Máquinas conectadas via Wi-Fi podem ter o IP alterado pelo roteador ao reconectar.
 
-
 ## Configuração de IPs
 
 O sistema restringe o acesso apenas às máquinas autorizadas. Os IPs são definidos durante o setup e ficam armazenados no arquivo `.env`:
 
 ```
-IPS_PERMITIDOS=XXX.X.X.X,XXX.X.X.X
+ALLOWED_IPS=XXX.X.X.X,XXX.X.X.X
 ```
 
+Ao acessar de um IP fora dessa lista, o sistema exibe "Acesso negado."
+
 Para adicionar ou remover IPs, edite o arquivo `.env` diretamente e reinicie o servidor.
+
+> **Importante:** o IP do próprio servidor deve estar incluído na lista (geralmente `127.0.0.1`), além do IP de cada máquina que vai acessar pelo navegador. É o IP do **servidor** que deve ser digitado no navegador das outras máquinas — não o IP da máquina que está acessando.
 
 ## Estrutura do projeto
 
 ```
 pOnto/
-├── config/             # Configurações do Django
-├── core/               # App principal
-│   ├── models.py       # Bolsista e SessaoTrabalho
-│   ├── views.py        # Lógica de registro de ponto
-│   ├── serializers.py  # API REST
-│   ├── urls.py         # Rotas
-│   ├── admin.py        # Painel administrativo
-│   └── middleware.py   # Restrição de acesso por IP
+├── config/               # Configurações do Django
+├── core/                 # App principal
+│   ├── models.py         # Bolsista e SessaoTrabalho
+│   ├── views.py          # Lógica de registro de ponto e API
+│   ├── serializers.py    # API REST
+│   ├── urls.py           # Rotas
+│   ├── admin.py          # Painel administrativo
+│   └── middleware.py     # Restrição de acesso por IP
 ├── templates/
 │   └── core/
-│       └── punch.html  # Interface de registro de ponto
-├── setup.bat           # Configuração inicial (executar uma vez)
-├── iniciar.bat         # Inicialização diária
-├── setup_env.py        # Geração do arquivo .env
-├── requirements.txt    # Dependências do projeto
-└── .env.example        # Exemplo de variáveis de ambiente
+│       └── ponto.html    # Interface de registro de ponto
+├── setup.bat             # Configuração inicial (executar uma vez)
+├── iniciar.bat           # Inicialização diária
+├── setup_env.py          # Geração do arquivo .env
+├── requirements.txt      # Dependências do projeto
+└── .env.example          # Exemplo de variáveis de ambiente
 ```
 
 ## Variáveis de ambiente
@@ -108,9 +123,16 @@ pOnto/
 | Variável | Descrição |
 |---|---|
 | `DJANGO_SECRET_KEY` | Chave secreta do Django (gerada automaticamente) |
-| `DJANGO_DEBUG` | Modo debug — sempre `True` |
-| `SENHA_PONTO` | Senha para registrar o ponto |
-| `ALLOWED_IPS` | IPs autorizados separados por vírgula |
+| `DJANGO_DEBUG` | Modo debug do Django |
+| `ALLOWED_IPS` | IPs autorizados a acessar o sistema, separados por vírgula |
+
+## Proteção contra duplicidade
+
+Para evitar registros duplicados por duplo clique ou requisições simultâneas, o sistema conta com três camadas de proteção:
+
+- O botão de confirmação é desabilitado assim que clicado, evitando duplo envio pelo navegador
+- O banco de dados trava a linha do bolsista durante o registro (`select_for_update`), impedindo que duas requisições simultâneas leiam o mesmo estado
+- Um intervalo mínimo de 5 segundos entre registros do mesmo bolsista bloqueia tentativas muito próximas, informando qual ação já havia sido registrada
 
 ## Como contribuir
 
