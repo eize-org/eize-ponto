@@ -2,11 +2,14 @@
 
 O pOnto é um sistema de controle de ponto simples, gratuito e de código aberto. Foi criado para suprir a falta de soluções acessíveis para quem precisa de um controle de ponto básico sem custos ou complexidade desnecessária.
 
+O projeto foi pensado para dois tipos de público: pessoas que só querem **usar** o sistema no dia a dia (sem precisar entender de programação) e desenvolvedores que querem **estudar ou contribuir** com o código.
+
 ## Funcionalidades
 
 - Registro de entrada e saída por bolsista, com um clique e confirmação via modal
 - Cálculo automático de minutos trabalhados
 - Controle de diferença em relação à jornada esperada (4 horas)
+- Controle de pendência (horas devidas) por bolsista, com abatimento automático
 - Proteção contra duplicidade de registros (cliques duplos ou requisições simultâneas)
 - Painel administrativo completo para o gerente, incluindo histórico de sessões
 - Restrição de acesso por IP — apenas máquinas autorizadas conseguem abrir o sistema
@@ -23,17 +26,28 @@ O pOnto é um sistema de controle de ponto simples, gratuito e de código aberto
 ## Pré-requisitos
 
 - Python 3.x instalado — [python.org/downloads](https://www.python.org/downloads/)
-- Git instalado — [git-scm.com](https://git-scm.com/)
+- Git instalado (opcional — veja abaixo) — [git-scm.com](https://git-scm.com/)
 
 ## Instalação
 
-**1. Clone o repositório:**
+Você pode baixar o pOnto de duas formas. Escolha a que for mais confortável:
+
+### Opção 1 — Sem Git (recomendado para quem só vai usar o sistema)
+
+1. Acesse o repositório: [eize-pOnto](https://github.com/eize-org/eize-ponto)
+2. Clique no botão verde **"Code"** e depois em **"Download ZIP"**
+3. Descompacte o arquivo baixado em uma pasta de sua escolha
+
+### Opção 2 — Com Git (recomendado para desenvolvedores)
+
 ```bash
 git clone https://github.com/oguiaraujo/pOnto-Sistema.git
 cd pOnto-Sistema
 ```
 
-**2. Execute o setup (apenas na primeira vez):**
+### Configuração inicial (apenas na primeira vez)
+
+Dentro da pasta do projeto, dê dois cliques em:
 ```
 setup.bat
 ```
@@ -42,14 +56,17 @@ Durante o setup você será solicitado a:
 - Informar os IPs das máquinas que terão acesso ao sistema
 - Criar o usuário administrador (gerente)
 
-**3. Para iniciar o sistema no dia a dia:**
+### Uso diário
+
+Para ligar o sistema, dê dois cliques em:
 ```
 iniciar.bat
 ```
 
-## Como usar
+Mantenha essa janela aberta enquanto o sistema estiver em uso — fechá-la desliga o servidor.
 
-**Bater o ponto (bolsista):**
+## Como usar — Bolsista (bater o ponto)
+
 1. Acesse a página inicial pelo navegador
 2. Clique no botão com o seu nome
 3. Confirme o registro na janela que aparece
@@ -58,15 +75,55 @@ O sistema alterna automaticamente entre entrada e saída: o primeiro clique do d
 
 Uma mensagem de confirmação aparece após cada registro — verde para entrada, laranja para saída. Se você tentar bater o ponto novamente muito rápido (menos de 5 segundos), o sistema bloqueia e avisa qual ação já foi registrada, evitando duplicidade.
 
-**Gerenciar bolsistas e acompanhar registros (gerente):**
-Acesse o painel administrativo em `/admin/` com o usuário criado durante o setup. Por lá é possível cadastrar bolsistas, visualizar todas as sessões de trabalho e conferir os minutos trabalhados e a diferença em relação à jornada esperada.
+## Como usar — Administrador (gerente)
+
+O painel administrativo é acessado em `/admin/`, usando o usuário criado durante o setup.
+
+### Acessando o painel
+
+1. No navegador, acesse `http://<IP-do-servidor>:8000/admin/`
+2. Informe o usuário e a senha do administrador
+3. Você verá duas seções principais: **Bolsistas** e **Sessãos**
+
+### Cadastrando um novo bolsista
+
+1. No painel, clique em **Bolsistas**
+2. Clique em **Adicionar Bolsista** (canto superior direito)
+3. Preencha o **nome** do bolsista
+4. Deixe o campo **Pendência (HH:MM)** como `00:00` (sem pendência inicial)
+5. Clique em **Salvar**
+
+O bolsista aparece imediatamente na tela pública de registro de ponto.
+
+### Acompanhando as sessões de um bolsista
+
+1. No painel, clique em **Bolsistas**
+2. Clique no nome do bolsista desejado
+3. Role até a seção **Sessão trabalho** — lá aparece o histórico completo: entrada, saída, tempo trabalhado, diferença em relação às 4h esperadas e quanto foi abatido da pendência em cada dia
+
+> Por segurança, entrada e saída não podem ser editadas manualmente — elas são sempre geradas pelo próprio sistema no momento em que o bolsista bate o ponto.
+
+### Adicionando uma pendência (falta ou ajuste de horas)
+
+Use este recurso quando o bolsista faltar e precisar compensar as horas depois, ou quando for necessário ajustar manualmente o saldo dele.
+
+1. No painel, clique em **Bolsistas**
+2. Clique no nome do bolsista
+3. No campo **Pendência (HH:MM)**, digite o valor desejado — por exemplo, `04:00` para 1 turno (4 horas)
+4. Clique em **Salvar**
+
+A partir daí, sempre que o bolsista trabalhar **mais** que as 4 horas esperadas em um dia, o excedente é descontado automaticamente da pendência, até ela zerar. Se o excedente for maior que a pendência restante, a sobra não vira hora extra — ela simplesmente não é contabilizada.
+
+### Consultando quem está com pendência
+
+Na lista de **Bolsistas**, a coluna **Pendência** mostra o saldo devedor de cada um no formato `HH:MMh`. Bolsistas sem pendência aparecem como `00:00h`.
 
 ## Acesso
 
 | Página | URL |
 |---|---|
 | Bater ponto | `http://<IP-do-servidor>:8000/` |
-| Painel do gerente | `http://<IP-do-servidor>:8000/admin/` |
+| Painel do administrador | `http://<IP-do-servidor>:8000/admin/` |
 
 Substitua `<IP-do-servidor>` pelo IP da máquina onde o sistema está rodando.
 
