@@ -103,6 +103,15 @@ def pagina_ponto(request):
                 sessao_aberta.saida = agora
                 sessao_aberta.min_trabalhados = trabalhou
                 sessao_aberta.diferenca_min = trabalhou - MINUTOS_ESPERADOS
+
+                excedente = max(trabalhou - MINUTOS_ESPERADOS, 0)
+                abatido = 0
+                if excedente > 0 and bolsista.pendencia_min > 0:
+                    abatido = min(excedente, bolsista.pendencia_min)
+                    bolsista.pendencia_min -= abatido
+                    bolsista.save()
+
+                sessao_aberta.pendencia_abatida_min = abatido
                 sessao_aberta.save()
                 messages.warning(request, f'Saída de {bolsista.nome} registrada!')
 
