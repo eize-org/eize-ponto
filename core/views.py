@@ -42,11 +42,7 @@ def ponto_bolsista(request, pk):
             'sessao': SessaoTrabalhoSerializer(sessao).data,
         }, status=status.HTTP_201_CREATED)
     else:
-        agora = timezone.now()
-        trabalhou = int((agora - sessao_aberta.entrada).total_seconds() / 60)
-        sessao_aberta.saida = agora
-        sessao_aberta.min_trabalhados = trabalhou
-        sessao_aberta.diferenca_min = trabalhou - MINUTOS_ESPERADOS
+        sessao_aberta.saida = timezone.now()
         sessao_aberta.save()
         return Response({
             'acao': 'saida',
@@ -72,6 +68,8 @@ def pagina_ponto(request):
 
     if request.method == 'POST':
         id_bolsista = request.POST.get('id_bolsista')
+        tipo = request.POST.get('tipo', SessaoTrabalho.NORMAL)
+
         try:
             bolsista = Bolsista.objects.select_for_update().get(pk=id_bolsista)
 
@@ -82,9 +80,7 @@ def pagina_ponto(request):
             ultima_sessao = SessaoTrabalho.objects.filter(bolsista=bolsista).order_by('-entrada').first()
 
             if ultima_sessao:
-                # Considera o horário do último evento: saída se já ocorreu, senão a entrada
                 ultimo_evento = ultima_sessao.saida or ultima_sessao.entrada
-
                 if (timezone.now() - ultimo_evento) < timedelta(seconds=5):
                     acao = 'saída' if ultima_sessao.saida else 'entrada'
                     messages.error(
@@ -95,25 +91,26 @@ def pagina_ponto(request):
                     return redirect('core:pagina_ponto')
 
             if sessao_aberta is None:
-                SessaoTrabalho.objects.create(bolsista=bolsista)
-                messages.success(request, f'Entrada de {bolsista.nome} registrada!')
-            else:
-                agora = timezone.now()
-                trabalhou = int((agora - sessao_aberta.entrada).total_seconds() / 60)
-                sessao_aberta.saida = agora
-                sessao_aberta.min_trabalhados = trabalhou
-                sessao_aberta.diferenca_min = trabalhou - MINUTOS_ESPERADOS
+                # Nenhuma sessão aberta: cria uma nova do tipo solicitado
+                SessaoTrabalho.objects.create(bolsista=bolsista, tipo=tipo)
+                rotulo = 'Pagamento de pendência' if tipo == SessaoTrabalho.PENDENCIA else 'Entrada'
+                messages.success(request, f'{rotulo} de {bolsista.nome} registrada!')
 
-                excedente = max(trabalhou - MINUTOS_ESPERADOS, 0)
-                abatido = 0
-                if excedente > 0 and bolsista.pendencia_min > 0:
-                    abatido = min(excedente, bolsista.pendencia_min)
-                    bolsista.pendencia_min -= abatido
-                    bolsista.save()
-
-                sessao_aberta.pendencia_abatida_min = abatido
+            elif sessao_aberta.tipo == tipo:
+                # Mesma sessão em aberto: fecha normalmente
+                sessao_aberta.saida = timezone.now()
                 sessao_aberta.save()
-                messages.warning(request, f'Saída de {bolsista.nome} registrada!')
+                rotulo = 'Pagamento de pendência' if tipo == SessaoTrabalho.PENDENCIA else 'Saída'
+                messages.warning(request, f'{rotulo} de {bolsista.nome} registrada!')
+
+            else:
+                # Sessão de outro tipo está aberta: bloqueia e avisa
+                tipo_aberto = 'pagamento de pendência' if sessao_aberta.tipo == SessaoTrabalho.PENDENCIA else 'ponto normal'
+                messages.error(
+                    request,
+                    f'{bolsista.nome} já possui um {tipo_aberto} em aberto. '
+                    f'Feche essa sessão antes de bater um ponto diferente.'
+                )
 
         except Bolsista.DoesNotExist:
             messages.error(request, 'Bolsista não encontrado.')
