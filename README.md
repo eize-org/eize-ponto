@@ -10,7 +10,8 @@ O projeto foi pensado para dois tipos de público: pessoas que só querem **usar
 - Cálculo automático de minutos trabalhados
 - Controle de diferença em relação à jornada esperada (4 horas)
 - Controle de pendência (horas devidas) por bolsista, com abatimento automático
-- Proteção contra duplicidade de registros (cliques duplos ou requisições simultâneas)
+- Pagamento fragmentado de pendência — o bolsista pode quitar horas devidas em qualquer momento, separado do ponto normal
+- Proteção contra duplicidade de registros (cliques duplos, requisições simultâneas ou dois tipos de ponto abertos ao mesmo tempo)
 - Painel administrativo completo para o gerente, incluindo histórico de sessões
 - Restrição de acesso por IP — apenas máquinas autorizadas conseguem abrir o sistema
 - Scripts de configuração e inicialização para Windows
@@ -41,8 +42,8 @@ Você pode baixar o pOnto de duas formas. Escolha a que for mais confortável:
 ### Opção 2 — Com Git (recomendado para desenvolvedores)
 
 ```bash
-git clone https://github.com/oguiaraujo/pOnto-Sistema.git
-cd pOnto-Sistema
+git clone https://github.com/eize-org/eize-ponto.git
+cd eize-ponto
 ```
 
 ### Configuração inicial (apenas na primeira vez)
@@ -67,6 +68,8 @@ Mantenha essa janela aberta enquanto o sistema estiver em uso — fechá-la desl
 
 ## Como usar — Bolsista (bater o ponto)
 
+### Ponto normal (entrada e saída)
+
 1. Acesse a página inicial pelo navegador
 2. Clique no botão com o seu nome
 3. Confirme o registro na janela que aparece
@@ -74,6 +77,18 @@ Mantenha essa janela aberta enquanto o sistema estiver em uso — fechá-la desl
 O sistema alterna automaticamente entre entrada e saída: o primeiro clique do dia registra a entrada, o clique seguinte registra a saída.
 
 Uma mensagem de confirmação aparece após cada registro — verde para entrada, laranja para saída. Se você tentar bater o ponto novamente muito rápido (menos de 5 segundos), o sistema bloqueia e avisa qual ação já foi registrada, evitando duplicidade.
+
+### Pagando horas pendentes
+
+Bolsistas com pendência (horas devidas) podem quitá-las de forma fragmentada, sem precisar esperar o próximo dia de trabalho. Por exemplo: pagar 2 horas à tarde e depois cumprir o expediente normal à noite.
+
+1. Na página inicial, clique no botão **"Pagar horas pendentes"**, logo abaixo dos botões normais
+2. Os botões dos bolsistas aparecem na cor laranja
+3. Clique no seu nome e confirme o registro
+
+Assim como o ponto normal, o primeiro clique abre a sessão e o clique seguinte a fecha. Todo o tempo trabalhado nessa sessão é descontado diretamente da pendência — diferente do ponto normal, aqui não há relação com a jornada de 4 horas.
+
+> **Importante:** não é possível ter um ponto normal e um pagamento de pendência abertos ao mesmo tempo. Se você tentar bater um tipo de ponto enquanto o outro está em aberto, o sistema bloqueia e avisa que é necessário fechar a sessão aberta primeiro.
 
 ## Como usar — Administrador (gerente)
 
@@ -99,7 +114,7 @@ O bolsista aparece imediatamente na tela pública de registro de ponto.
 
 1. No painel, clique em **Bolsistas**
 2. Clique no nome do bolsista desejado
-3. Role até a seção **Sessão trabalho** — lá aparece o histórico completo: entrada, saída, tempo trabalhado, diferença em relação às 4h esperadas e quanto foi abatido da pendência em cada dia
+3. Role até a seção **Sessão trabalho** — lá aparece o histórico completo: tipo de sessão (normal ou pagamento de pendência), entrada, saída, tempo trabalhado, diferença em relação às 4h esperadas e quanto foi abatido da pendência em cada dia
 
 > Por segurança, entrada e saída não podem ser editadas manualmente — elas são sempre geradas pelo próprio sistema no momento em que o bolsista bate o ponto.
 
@@ -112,7 +127,12 @@ Use este recurso quando o bolsista faltar e precisar compensar as horas depois, 
 3. No campo **Pendência (HH:MM)**, digite o valor desejado — por exemplo, `04:00` para 1 turno (4 horas)
 4. Clique em **Salvar**
 
-A partir daí, sempre que o bolsista trabalhar **mais** que as 4 horas esperadas em um dia, o excedente é descontado automaticamente da pendência, até ela zerar. Se o excedente for maior que a pendência restante, a sobra não vira hora extra — ela simplesmente não é contabilizada.
+A partir daí, a pendência pode ser quitada de duas formas:
+
+- **Pelo ponto normal:** sempre que o bolsista trabalhar **mais** que as 4 horas esperadas em um dia, o excedente é descontado automaticamente da pendência
+- **Pelo pagamento de pendência:** o bolsista bate esse ponto separadamente e todo o tempo registrado é descontado da pendência, independente da jornada normal
+
+Se o tempo pago (excedente ou pagamento de pendência) for maior que a pendência restante, a sobra não vira hora extra — ela simplesmente não é contabilizada.
 
 ### Consultando quem está com pendência
 
@@ -185,11 +205,12 @@ pOnto/
 
 ## Proteção contra duplicidade
 
-Para evitar registros duplicados por duplo clique ou requisições simultâneas, o sistema conta com três camadas de proteção:
+Para evitar registros duplicados por duplo clique, requisições simultâneas ou conflito entre tipos de ponto, o sistema conta com quatro camadas de proteção:
 
 - O botão de confirmação é desabilitado assim que clicado, evitando duplo envio pelo navegador
 - O banco de dados trava a linha do bolsista durante o registro (`select_for_update`), impedindo que duas requisições simultâneas leiam o mesmo estado
 - Um intervalo mínimo de 5 segundos entre registros do mesmo bolsista bloqueia tentativas muito próximas, informando qual ação já havia sido registrada
+- Se já existe uma sessão aberta de um tipo (normal ou pagamento de pendência), o sistema impede a abertura de uma sessão do outro tipo e avisa que é necessário fechar a sessão em aberto primeiro
 
 ## Como contribuir
 
@@ -216,4 +237,4 @@ Este projeto está licenciado sob a licença MIT. Consulte o arquivo [LICENSE](L
 
 ---
 
-Desenvolvido por [oguiaraujo](https://github.com/oguiaraujo)
+Desenvolvido por [eize-org](https://github.com/eize-org)
