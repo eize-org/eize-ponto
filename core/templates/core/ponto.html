@@ -21,9 +21,38 @@
             border-color: #4e1034 !important;
             box-shadow: 0 0 0 0.25rem rgba(100, 21, 66, 0.5) !important;
         }
-        a {
-            text-decoration: none; /* Remove a barra embaixo */
-            color: inherit;        /* Faz o link herdar a cor do texto ao redor (ou defina uma cor como #333, black, etc.) */
+        .btn-pendencia {
+            background-color: #e07b00;
+            border-color: #e07b00;
+            color: #fff;
+        }
+        .btn-pendencia:hover {
+            background-color: #b86300;
+            border-color: #b86300;
+            color: #fff;
+        }
+        .btn-pendencia:active,
+        .btn-pendencia:focus,
+        .btn-pendencia:focus-visible {
+            background-color: #b86300 !important;
+            border-color: #b86300 !important;
+            box-shadow: 0 0 0 0.25rem rgba(224, 123, 0, 0.5) !important;
+            color: #fff !important;
+        }
+        .link-discreto {
+            font-size: 0.85rem;
+            color: #6c757d;
+            text-decoration: underline;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .link-discreto:hover {
+            color: #495057;
+        }
+        #secao-pendencia {
+            display: none;
         }
     </style>
 </head>
@@ -66,7 +95,52 @@
                                 <form method="post">
                                     {% csrf_token %}
                                     <input type="hidden" name="id_bolsista" value="{{ bolsista.id }}">
+                                    <input type="hidden" name="tipo" value="normal">
                                     <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.form.submit();">
+                                        Confirmar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-4">
+            <button type="button" class="link-discreto" onclick="alternarPendencia()">
+                Pagar horas pendentes
+            </button>
+        </div>
+
+        <div id="secao-pendencia" class="row g-3 mt-2">
+            {% for bolsista in bolsistas %}
+                <div class="col-6 col-md-4 col-lg-3">
+                    <button
+                        class="btn btn-pendencia w-100 py-3"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modal-pendencia-{{ bolsista.id }}">
+                        {{ bolsista.nome }}
+                    </button>
+                </div>
+
+                <div class="modal fade" id="modal-pendencia-{{ bolsista.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Confirmar pagamento de pendência</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                Confirma o registro de pagamento de horas pendentes para <strong>{{ bolsista.nome }}</strong>?
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="id_bolsista" value="{{ bolsista.id }}">
+                                    <input type="hidden" name="tipo" value="pendencia">
+                                    <button type="submit" class="btn btn-pendencia" onclick="this.disabled=true; this.form.submit();">
                                         Confirmar
                                     </button>
                                 </form>
@@ -79,9 +153,15 @@
     </div>
 
     <footer class="text-center text-muted py-4 small">
-        <a href="https://github.com/eize-org">eize-org</a>
+        eize-org
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function alternarPendencia() {
+            const secao = document.getElementById('secao-pendencia');
+            secao.style.display = secao.style.display === 'none' ? 'flex' : 'none';
+        }
+    </script>
 </body>
 </html>
