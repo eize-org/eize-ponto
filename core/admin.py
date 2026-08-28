@@ -1,6 +1,34 @@
-from django import forms
 from django.contrib import admin
+from django.utils import timezone
+from datetime import timedelta
+from django import forms
 from .models import Bolsista, SessaoTrabalho, horas_para_minutos, minutos_para_horas
+
+
+class FiltroSemana(admin.SimpleListFilter):
+    title = 'semana'
+    parameter_name = 'semana'
+
+    def lookups(self, request, model_admin):
+        opcoes = []
+        hoje = timezone.now().date()
+        inicio_semana_atual = hoje - timedelta(days=hoje.weekday())
+
+        for i in range(4):  # últimas 4 semanas
+            inicio = inicio_semana_atual - timedelta(weeks=i)
+            fim = inicio + timedelta(days=6)
+            label = f'{inicio.strftime("%d/%m")} a {fim.strftime("%d/%m")}'
+            opcoes.append((str(i), label))
+        return opcoes
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset
+        hoje = timezone.now().date()
+        inicio_semana_atual = hoje - timedelta(days=hoje.weekday())
+        inicio = inicio_semana_atual - timedelta(weeks=int(self.value()))
+        fim = inicio + timedelta(days=7)
+        return queryset.filter(entrada__date__gte=inicio, entrada__date__lt=fim)
 
 
 class BolsistaForm(forms.ModelForm):
@@ -58,6 +86,6 @@ class BolsistaAdmin(admin.ModelAdmin):
 @admin.register(SessaoTrabalho)
 class SessaoTrabalhoAdmin(admin.ModelAdmin):
     list_display = ['bolsista', 'tipo', 'entrada', 'saida', 'mostra_trabalhados', 'mostra_diferenca', 'mostra_pendencia_abatida']
-    list_filter = ['tipo', 'entrada']
+    list_filter = ['bolsista', FiltroSemana, 'tipo']
     search_fields = ['bolsista__nome']
     readonly_fields = ['mostra_trabalhados', 'mostra_diferenca', 'mostra_pendencia_abatida']
