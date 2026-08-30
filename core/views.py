@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
 from datetime import timedelta
@@ -61,6 +61,13 @@ def sessoes_bolsista(request, pk):
     serializer = SessaoTrabalhoSerializer(sessoes, many=True)
     return Response(serializer.data)
 
+def historico_bolsista(request, token):
+    bolsista = get_object_or_404(Bolsista, token=token)
+    sessoes = bolsista.sessaotrabalho_set.all()
+    return render(request, 'core/historico.html', {
+        'bolsista': bolsista,
+        'sessoes': sessoes,
+    })
 
 @transaction.atomic
 def pagina_ponto(request):
