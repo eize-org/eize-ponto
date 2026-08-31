@@ -48,5 +48,3 @@ static/
 Thumbs.db
 
 # Migrações (opcional — muitos projetos preferem versionar)
-*/migrations/*.py
-!*/migrations/__init__.py
