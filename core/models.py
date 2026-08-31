@@ -1,3 +1,4 @@
+import secrets
 from django.db import models
 from django.utils import timezone
 
@@ -23,17 +24,22 @@ def horas_para_minutos(texto):
 class Bolsista(models.Model):
     nome = models.CharField("Nome", max_length=100)
     pendencia_min = models.IntegerField('Pendência (min)', default=0)
+    token = models.CharField('Token de acesso', max_length=64, unique=True, blank=True)
 
     class Meta:
         verbose_name = 'Bolsista'
         verbose_name_plural = 'Bolsistas'
         ordering = ['nome']
 
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = secrets.token_urlsafe(24)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.nome
 
     def sessao_aberta(self):
-        """Retorna qualquer sessão aberta, de qualquer tipo."""
         return self.sessaotrabalho_set.filter(saida__isnull=True).first()
 
     def pendencia_display(self):
