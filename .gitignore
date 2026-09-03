@@ -38,7 +38,6 @@ static/
 !.env.example
 
 # IDEs
-.vscode/
 .idea/
 *.sublime-project
 *.sublime-workspace
