@@ -238,3 +238,9 @@ Este projeto está licenciado sob a licença MIT. Consulte o arquivo [LICENSE](L
 ---
 
 Desenvolvido por [eize-org](https://github.com/eize-org)
+## ☁️ Arquitetura em Nuvem (Histórico Público)
+
+Para permitir que bolsistas acessem o histórico de casa sem expor o PC da biblioteca, o projeto conta com uma arquitetura de sincronização de 3 peças:
+1. **Este repositório (PC Local):** É a fonte da verdade. Dispara signals sempre que o ponto é batido ou o bolsista é atualizado, enviando um POST silencioso (em background) para a nuvem.
+2. **[eize-ponto-api-historico](https://github.com/eize-org/eize-ponto-api-historico) (PythonAnywhere):** Uma API REST mínima que recebe o sync (protegida por chave secreta) e devolve as tabelas como JSON.
+3. **[eize-ponto-historico](https://github.com/eize-org/eize-ponto-historico) (GitHub Pages):** Um frontend estático puramente HTML/JS que puxa o JSON da API e exibe para o usuário através de um link com o token (`?token=ABC`).

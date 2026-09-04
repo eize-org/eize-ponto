@@ -41,6 +41,8 @@ eize-ponto/
 - [x] Layout responsivo mobile para a tela de histórico (tabela com badges, texto do badge de pendência quebrando em 3 linhas, tudo centralizado)
 - [x] Scripts `.bat` de setup, uso diário e atualização automatizada via `git pull` + migrações
 
+- [x] Sincronização em nuvem: Dados locais enviados silenciosamente (background thread + signals) para uma API no PythonAnywhere, servidos por um frontend no GitHub Pages (3 repositórios separados).
+
 ## 3. Dependências principais (`requirements.txt`)
 
 ```
@@ -59,52 +61,12 @@ Sem Node.js, sem npm, sem build step de frontend — tudo Bootstrap via CDN dire
 - Acesso restrito a 2 PCs autorizados (IP fixo/estável via cabo)
 - Problema real identificado: a rede da universidade é segmentada em sub-redes que não se enxergam (PC servidor via cabo em uma sub-rede, celulares dos bolsistas via Wi-Fi em outra) — isso impede o acesso ao histórico pelo celular dentro da própria rede, mesmo estando no mesmo prédio
 
-## 5. O que está parcialmente feito / precisa de atenção
+## 5. Próximos passos de desenvolvimento
 
-- **`core/middleware.py`** já tem um trecho que libera a rota `/historico/` do bloqueio de IP:
-  ```python
-  def __call__(self, request):
-      if request.path.startswith('/historico/'):
-          return self.get_response(request)
-      ip = request.META.get('REMOTE_ADDR')
-      if ip not in settings.ALLOWED_IPS:
-          return HttpResponseForbidden('Acesso negado.')
-      return self.get_response(request)
-  ```
-  Esse ajuste **não resolve sozinho** o problema de acesso remoto — ele só evita bloquear por IP dentro da rede local, mas o servidor não está exposto à internet. Com a decisão de migrar para arquitetura de sincronização (PC local + PythonAnywhere), **esse trecho provavelmente deixa de ser necessário** e a rota `/historico/` pode ser removida do projeto local por completo (ela passaria a existir só no PythonAnywhere). Isso é uma decisão a confirmar no início da próxima etapa.
+- No momento, a arquitetura principal e a sincronização em nuvem estão 100% concluídas.
+- Futuras melhorias podem incluir um script de retry/sincronização em lote (`sincronizar_tudo`) caso o PC da biblioteca fique dias offline.
 
-- **Arquitetura de histórico remoto mudou de desenho** durante o planejamento: a ideia original era o PythonAnywhere servir HTML completo; a decisão atual é o PythonAnywhere ser só uma API JSON, com o frontend estático hospedado em GitHub Pages (ver `tech_spec.md`, seção 5, para o desenho completo). Nenhuma linha de código dessa arquitetura foi escrita ainda — é puramente planejamento até este ponto.
-
-- **API REST (DRF)** existe mas está desatualizada em relação à view web:
-  - `ponto_bolsista` (API) não suporta o campo `tipo` (normal/pendência)
-  - `ponto_bolsista` (API) não tem as proteções de duplicidade que `pagina_ponto` (view web) tem
-  - Hoje a API não é o canal de uso real do sistema — é secundária. Só precisa de atenção se for reativada como canal principal (ex: se um app mobile nativo for cogitado no futuro)
-
-## 6. Próximo passo imediato de desenvolvimento
-
-**Implementar a arquitetura de três partes — PC local, PythonAnywhere (API) e GitHub Pages (frontend estático)** — para resolver o acesso ao histórico fora da rede local, sem custo.
-
-Decisão recente (substituiu a ideia original de PythonAnywhere sozinho servindo HTML): a parte visual do histórico vai morar em **GitHub Pages** (domínio `.github.io`, permanente e gratuito), consumindo dados de uma **API JSON simples no PythonAnywhere**. O PythonAnywhere deixa de precisar renderizar template nenhum — só recebe sincronização e responde JSON.
-
-**Organização de repositórios (decidida):**
-- `eize-org/eize-ponto` — este repositório, sistema principal (PC local)
-- `eize-org/eize-ponto-historico` (novo) — GitHub Pages, frontend estático
-- `eize-org/eize-ponto-api-historico` (novo) — Django enxuto rodando no PythonAnywhere
-
-Ordem sugerida de execução:
-1. Criar os repositórios `eize-ponto-historico` e `eize-ponto-api-historico`
-2. Criar o projeto Django enxuto no PythonAnywhere, a partir do repositório `eize-ponto-api-historico` (models espelho de `Bolsista` e `SessaoTrabalho`, sem a lógica de cálculo — só recebe e responde)
-3. Implementar as rotas de sincronização protegidas por chave secreta (`POST /sincronizar/bolsista/`, `POST /sincronizar/sessao/`)
-4. Implementar a rota `GET /api/historico/<token>/` no PythonAnywhere, retornando JSON (não HTML) — habilitar CORS restrito ao domínio do GitHub Pages
-5. Construir a página estática em `eize-ponto-historico`: lê `token` da query string, faz `fetch()` na API, renderiza a tabela (reaproveitando visualmente o que já existe em `templates/core/historico.html` deste repositório)
-6. No projeto local (`eize-ponto`), adicionar o disparo de sincronização (`requests.post`) após salvar `Bolsista` (admin) e após fechar `SessaoTrabalho` (view `pagina_ponto`)
-7. Adicionar `SYNC_URL` e `SYNC_KEY` ao `.env` e ao `.env.example` do `eize-ponto`
-8. Decidir e implementar a estratégia de retry/fallback para falha de sincronização (ver `tech_spec.md`, seção 5, item de decisões em aberto)
-9. Testar de ponta a ponta: bater ponto no PC local → confirmar que aparece no histórico acessado do celular, via GitHub Pages, fora da rede da biblioteca
-10. Avaliar se a rota local `/historico/<token>/` (e o trecho do `middleware.py` que a libera do IP whitelist) ainda faz sentido manter em `eize-ponto` como fallback interno, ou se deve ser removida
-11. Atualizar o `README.md` de cada repositório — o principal documentando a nova forma de acesso ao histórico, e os dois novos com suas próprias instruções de setup/deploy
-
-## 7. Decisões de produto já confirmadas (não reabrir sem confirmar com o dono do projeto)
+## 6. Decisões de produto já confirmadas (não reabrir sem confirmar com o dono do projeto)
 
 - Jornada fixa de 4h para todos, sem exceção configurável
 - Sem senha para bater ponto
