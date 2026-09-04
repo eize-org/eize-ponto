@@ -126,7 +126,7 @@ GET      /historico/<str:token>/    → historico_bolsista (histórico individua
 
 **Observação de inconsistência conhecida:** a API (`ponto_bolsista`) ainda não foi atualizada para suportar o campo `tipo` (normal/pendência) nem as proteções de duplicidade que a view web (`pagina_ponto`) já tem (`select_for_update`, intervalo de 5s, bloqueio de tipo conflitante). Hoje a API é secundária — o fluxo real de uso é todo via `pagina_ponto`. Se a API for retomada como canal ativo, precisa de paridade de regras com a view web.
 
-## 5. Rotas/arquitetura em desenvolvimento (GitHub Pages + PythonAnywhere)
+## 5. Rotas/arquitetura implementada (GitHub Pages + PythonAnywhere)
 
 **Objetivo:** permitir que o histórico do bolsista seja acessível de qualquer lugar (fora da rede local), sem expor a tela de bater ponto nem o admin, e sem custo de domínio/hospedagem.
 
@@ -191,11 +191,12 @@ O JavaScript da página lê o `token` da query string, chama a API do PythonAnyw
 - **Falha de sincronização não pode bloquear o fluxo principal** — bater ponto localmente sempre funciona, mesmo se a internet cair ou o PythonAnywhere estiver fora do ar. Tratar com try/except silencioso + log, no mínimo.
 - A rota local `/historico/<token>/` (view + template) provavelmente deixa de ser necessária no PC local, já que a experiência de histórico passa a viver inteiramente em GitHub Pages + PythonAnywhere. Avaliar remoção ou manutenção como fallback interno (ex: para o bibliotecário conferir algo rapidamente sem depender da sincronização).
 
-### Decisões técnicas ainda em aberto (a resolver na implementação)
-1. Retry de sincronização: reenviar depois de falha, ou só logar e seguir? Vale um comando de management `sincronizar_tudo` como fallback manual?
-2. Chave de correlação entre os dois bancos: usar o mesmo `id` inteiro, ou o `token` do bolsista como chave primária de sincronização? (recomendação: usar `token` para `Bolsista`, já que é único e estável; para `SessaoTrabalho`, precisa de algum identificador estável — considerar UUID gerado no PC local no momento da criação, em vez do `id` autoincremental do SQLite local, que pode colidir entre bancos diferentes)
-3. Escopo exato dos campos no JSON retornado pela API — deve espelhar o que hoje é exibido em `templates/core/historico.html`: tipo, entrada, saída, trabalhado, diferença, mais nome e pendência do bolsista
-4. Configuração de CORS no PythonAnywhere — restringir `CORS_ALLOWED_ORIGINS` especificamente ao domínio do GitHub Pages usado (não deixar aberto para qualquer origem)
+### Decisões técnicas implementadas
+1. **Retry de sincronização:** A sincronização local (`requests.post`) roda em threads separadas (`daemon=True`) via signals (`post_save`), com um timeout de 5 segundos. Falhas (sem internet) são ignoradas com log local, sem bloquear a usabilidade para a biblioteca.
+2. **Chave de correlação:** O `token` atua como chave de upsert para os Bolsistas. Para `SessaoTrabalho`, o `id` local é mapeado para um campo `id_origem` no banco remoto, evitando a complexidade de adicionar UUIDs no MVP.
+3. **Escopo do JSON:** O retorno envia dados pré-formatados (ex: `pendencia_display`, `trabalhado_display`), mantendo a API e o frontend puramente focados na exibição da informação sem recalcular horas.
+4. **CORS e Segurança:** A API no PythonAnywhere usa `django-cors-headers` restrito ao GitHub Pages. As rotas de sincronização validam o header `X-Sync-Key` contra o `.env`.
+5. **UX:** O admin Django do PC local gera e exibe a URL pública do GitHub Pages (`?token=...`) para facilitar o compartilhamento.
 
 ### Organização de repositórios (decidido)
 
