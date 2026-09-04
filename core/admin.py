@@ -87,7 +87,7 @@ class BolsistaAdmin(admin.ModelAdmin):
     def link_historico(self, obj):
         if not obj.pk:
             return '—'
-        url = f'/historico/{obj.token}/'
+        url = f'https://eize-org.github.io/eize-ponto-historico/?token={obj.token}'
         return format_html('<a href="{0}" target="_blank">{0}</a>', url)
     link_historico.short_description = 'Link do histórico (pessoal e intransferível)'
 
