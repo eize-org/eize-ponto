@@ -108,6 +108,8 @@ O painel administrativo é acessado em `/admin/`, usando o usuário criado duran
 4. Deixe o campo **Pendência (HH:MM)** como `00:00` (sem pendência inicial)
 5. Clique em **Salvar**
 
+> 💡 **Importante:** Após salvar, o sistema vai gerar automaticamente um **Link do histórico** (pessoal e intransferível). Copie esse link e **envie para o bolsista** (ex: via WhatsApp). É por ele que o bolsista poderá acompanhar suas horas trabalhadas diretamente do próprio celular de casa.
+
 O bolsista aparece imediatamente na tela pública de registro de ponto.
 
 ### Acompanhando as sessões de um bolsista
@@ -147,6 +149,13 @@ Na lista de **Bolsistas**, a coluna **Pendência** mostra o saldo devedor de cad
 
 Substitua `<IP-do-servidor>` pelo IP da máquina onde o sistema está rodando.
 
+## ☁️ Arquitetura em Nuvem (Histórico Público)
+
+Para permitir que bolsistas acessem o histórico de casa sem expor o PC da biblioteca, o projeto conta com uma arquitetura de sincronização de 3 peças:
+1. **Este repositório (PC Local):** É a fonte da verdade. Dispara signals sempre que o ponto é batido ou o bolsista é atualizado, enviando um POST silencioso (em background) para a nuvem.
+2. **[eize-ponto-api-historico](https://github.com/eize-org/eize-ponto-api-historico) (PythonAnywhere):** Uma API REST mínima que recebe o sync (protegida por chave secreta) e devolve as tabelas como JSON.
+3. **[eize-ponto-historico](https://github.com/eize-org/eize-ponto-historico) (GitHub Pages):** Um frontend estático puramente HTML/JS que puxa o JSON da API e exibe para o usuário através de um link com o token (`?token=ABC`).
+
 ## Como descobrir o IP de uma máquina
 
 **No Windows**, abra o Prompt de Comando e execute:
@@ -175,33 +184,34 @@ Para adicionar ou remover IPs, edite o arquivo `.env` diretamente e reinicie o s
 
 ## Estrutura do projeto
 
-```
+```text
 pOnto/
-├── config/               # Configurações do Django
+├── config/               # Configurações gerais do Django (settings, urls principais)
 ├── core/                 # App principal
-│   ├── models.py         # Bolsista e SessaoTrabalho
-│   ├── views.py          # Lógica de registro de ponto e API
-│   ├── serializers.py    # API REST
-│   ├── urls.py           # Rotas
+│   ├── models.py         # Bolsista e SessaoTrabalho (com regras de negócio no save)
+│   ├── views.py          # Lógica de registro de ponto
 │   ├── admin.py          # Painel administrativo
-│   └── middleware.py     # Restrição de acesso por IP
-├── templates/
-│   └── core/
-│       └── ponto.html    # Interface de registro de ponto
-├── setup.bat             # Configuração inicial (executar uma vez)
-├── iniciar.bat           # Inicialização diária
-├── setup_env.py          # Geração do arquivo .env
-├── requirements.txt      # Dependências do projeto
-└── .env.example          # Exemplo de variáveis de ambiente
+│   ├── middleware.py     # Restrição de acesso por IP
+│   ├── sync.py           # Envio de dados para a nuvem em background (threads)
+│   └── signals.py        # Gatilhos automáticos de sincronização ao salvar dados
+├── docs/                 # Documentações técnicas e regras do projeto
+├── templates/core/       # Interfaces HTML do usuário
+├── setup.bat             # Configuração inicial do ambiente Windows (executar uma vez)
+├── iniciar.bat           # Inicialização diária do servidor local
+├── atualizar.bat         # Atualização automatizada do sistema (puxando do GitHub)
+├── requirements.txt      # Dependências do projeto (Django, decouple, requests)
+└── .env.example          # Template e explicação das variáveis de ambiente
 ```
 
 ## Variáveis de ambiente
 
 | Variável | Descrição |
 |---|---|
-| `DJANGO_SECRET_KEY` | Chave secreta do Django (gerada automaticamente) |
-| `DJANGO_DEBUG` | Modo debug do Django |
+| `DJANGO_SECRET_KEY` | Chave secreta do Django (gerada no momento do setup) |
+| `DJANGO_DEBUG` | Ativa o modo debug do Django (`True` ou `False`) |
 | `ALLOWED_IPS` | IPs autorizados a acessar o sistema, separados por vírgula |
+| `SYNC_URL` | URL base da API no PythonAnywhere para sincronização |
+| `SYNC_KEY` | Senha de autenticação idêntica à configurada na nuvem |
 
 ## Proteção contra duplicidade
 
@@ -238,9 +248,3 @@ Este projeto está licenciado sob a licença MIT. Consulte o arquivo [LICENSE](L
 ---
 
 Desenvolvido por [eize-org](https://github.com/eize-org)
-## ☁️ Arquitetura em Nuvem (Histórico Público)
-
-Para permitir que bolsistas acessem o histórico de casa sem expor o PC da biblioteca, o projeto conta com uma arquitetura de sincronização de 3 peças:
-1. **Este repositório (PC Local):** É a fonte da verdade. Dispara signals sempre que o ponto é batido ou o bolsista é atualizado, enviando um POST silencioso (em background) para a nuvem.
-2. **[eize-ponto-api-historico](https://github.com/eize-org/eize-ponto-api-historico) (PythonAnywhere):** Uma API REST mínima que recebe o sync (protegida por chave secreta) e devolve as tabelas como JSON.
-3. **[eize-ponto-historico](https://github.com/eize-org/eize-ponto-historico) (GitHub Pages):** Um frontend estático puramente HTML/JS que puxa o JSON da API e exibe para o usuário através de um link com o token (`?token=ABC`).
