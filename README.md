@@ -153,8 +153,7 @@ Substitua `<IP-do-servidor>` pelo IP da máquina onde o sistema está rodando.
 
 Para permitir que bolsistas acessem o histórico de casa sem expor o PC da biblioteca, o projeto conta com uma arquitetura de sincronização de 3 peças:
 1. **Este repositório (PC Local):** É a fonte da verdade. Dispara signals sempre que o ponto é batido ou o bolsista é atualizado, enviando um POST silencioso (em background) para a nuvem.
-2. **[eize-ponto-api-historico](https://github.com/eize-org/eize-ponto-api-historico) (PythonAnywhere):** Uma API REST mínima que recebe o sync (protegida por chave secreta) e devolve as tabelas como JSON.
-3. **[eize-ponto-historico](https://github.com/eize-org/eize-ponto-historico) (GitHub Pages):** Um frontend estático puramente HTML/JS que puxa o JSON da API e exibe para o usuário através de um link com o token (`?token=ABC`).
+2. **[eize-ponto-historico](https://github.com/eize-org/eize-ponto-historico) (GitHub Pages):** O frontend (HTML/JS) e o armazenamento (JSONs). O PC local escreve os dados diretamente nessa pasta via API do GitHub, e a página lê os arquivos instantaneamente (sem servidor intermediário).
 
 ## Como descobrir o IP de uma máquina
 
@@ -210,8 +209,8 @@ pOnto/
 | `DJANGO_SECRET_KEY` | Chave secreta do Django (gerada no momento do setup) |
 | `DJANGO_DEBUG` | Ativa o modo debug do Django (`True` ou `False`) |
 | `ALLOWED_IPS` | IPs autorizados a acessar o sistema, separados por vírgula |
-| `SYNC_URL` | URL base da API no PythonAnywhere para sincronização |
-| `SYNC_KEY` | Senha de autenticação idêntica à configurada na nuvem |
+| `GITHUB_TOKEN` | Token do GitHub com acesso ao repositório do histórico |
+| `GITHUB_REPO` | Nome do repositório destino (ex: `eize-org/eize-ponto-historico`) |
 
 ## Proteção contra duplicidade
 
