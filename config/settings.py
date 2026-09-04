@@ -9,6 +9,15 @@ DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
 ALLOWED_IPS = config('ALLOWED_IPS', default='').split(',')
 
+# ---------------------------------------------------------------------------
+# Sincronização com a nuvem (PythonAnywhere)
+# Deixar em branco desativa a sincronização sem causar erros — útil para
+# ambientes de desenvolvimento onde não há acesso à internet.
+# ---------------------------------------------------------------------------
+SYNC_URL = config('SYNC_URL', default='')
+SYNC_KEY = config('SYNC_KEY', default='')
+
+
 ALLOWED_HOSTS = ['*']
 
 
