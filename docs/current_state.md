@@ -41,7 +41,7 @@ eize-ponto/
 - [x] Layout responsivo mobile para a tela de histórico (tabela com badges, texto do badge de pendência quebrando em 3 linhas, tudo centralizado)
 - [x] Scripts `.bat` de setup, uso diário e atualização automatizada via `git pull` + migrações
 
-- [x] Sincronização em nuvem: Dados locais enviados silenciosamente (background thread + signals) para uma API no PythonAnywhere, servidos por um frontend no GitHub Pages (3 repositórios separados).
+- [x] Sincronização em nuvem: Dados locais enviados silenciosamente (background thread + signals) para o GitHub Pages via API do GitHub, abolindo o uso de servidores intermediários (GitOps/Jamstack).
 
 ## 3. Dependências principais (`requirements.txt`)
 

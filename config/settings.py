@@ -14,8 +14,8 @@ ALLOWED_IPS = config('ALLOWED_IPS', default='').split(',')
 # Deixar em branco desativa a sincronização sem causar erros — útil para
 # ambientes de desenvolvimento onde não há acesso à internet.
 # ---------------------------------------------------------------------------
-SYNC_URL = config('SYNC_URL', default='')
-SYNC_KEY = config('SYNC_KEY', default='')
+GITHUB_TOKEN = config('GITHUB_TOKEN', default='')
+GITHUB_REPO = config('GITHUB_REPO', default='')
 
 
 ALLOWED_HOSTS = ['*']

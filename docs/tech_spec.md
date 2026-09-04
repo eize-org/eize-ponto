@@ -126,87 +126,14 @@ GET      /historico/<str:token>/    → historico_bolsista (histórico individua
 
 **Observação de inconsistência conhecida:** a API (`ponto_bolsista`) ainda não foi atualizada para suportar o campo `tipo` (normal/pendência) nem as proteções de duplicidade que a view web (`pagina_ponto`) já tem (`select_for_update`, intervalo de 5s, bloqueio de tipo conflitante). Hoje a API é secundária — o fluxo real de uso é todo via `pagina_ponto`. Se a API for retomada como canal ativo, precisa de paridade de regras com a view web.
 
-## 5. Rotas/arquitetura implementada (GitHub Pages + PythonAnywhere)
+## 5. Arquitetura Serverless de Histórico (GitOps)
 
-**Objetivo:** permitir que o histórico do bolsista seja acessível de qualquer lugar (fora da rede local), sem expor a tela de bater ponto nem o admin, e sem custo de domínio/hospedagem.
-
-**Por que não é possível resolver só localmente:** a rede da universidade onde a biblioteca fica é segmentada em sub-redes que não se enxergam entre si (ex: PC servidor em `10.124.99.x` via cabo, celulares em `10.114.119.x` via Wi-Fi) — não há acesso/permissão para alterar essa infraestrutura de rede.
-
-**Arquitetura decidida — três partes, separando visual de dados:**
-
-```
-PC local (fonte da verdade, dados reais)
-   │  POST autenticado a cada mudança relevante
-   ▼
-PythonAnywhere (cópia/espelho, free tier)
-   │  API "burra", só devolve JSON — sem HTML, sem template
-   │  GET /api/historico/<token>/  →  {"bolsista": ..., "sessoes": [...]}
-   ▲
-   │  fetch() via JavaScript
-   │
-GitHub Pages (github.io, estático, grátis e permanente)
-   │  HTML com campo pra colar/receber o token
-   │  JS busca os dados na API do PythonAnywhere e monta a tabela
-   ▼
-Celular do bolsista (de qualquer lugar)
-```
-
-**Por que separar assim:** o GitHub Pages nunca expira, nunca muda de domínio e é 100% gratuito de forma permanente — mas só serve conteúdo estático (HTML/CSS/JS), não consegue consultar banco de dados diretamente. O PythonAnywhere continua sendo necessário como a peça que efetivamente acessa dados, mas fica reduzido a uma API JSON simples, sem responsabilidade de renderizar nada — reduz a superfície do que pode quebrar do lado da nuvem, e o design/UX fica centralizado e versionado como uma página estática comum.
-
-O link enviado ao bolsista pode continuar no formato de sempre (com o token na URL), agora apontando para o GitHub Pages, ex:
-```
-https://eize-org.github.io/eize-ponto-historico/?token=<token>
-```
-O JavaScript da página lê o `token` da query string, chama a API do PythonAnywhere, e renderiza a tabela.
-
-### A construir no PythonAnywhere (projeto novo/separado — API apenas)
-- Projeto Django enxuto com models equivalentes a `Bolsista` e `SessaoTrabalho` (só o necessário para responder consultas — não precisa da lógica de abatimento/cálculo, já que os valores já vêm calculados e prontos do PC local)
-- Rotas de sincronização (recebendo dados do PC local), protegidas por chave secreta em header (ex: `X-Sync-Key`):
-  ```
-  POST /sincronizar/bolsista/    → cria ou atualiza um Bolsista (por id ou token)
-  POST /sincronizar/sessao/      → cria ou atualiza uma SessaoTrabalho (por id)
-  ```
-- Rota pública de consulta, **retornando JSON, não HTML**:
-  ```
-  GET /api/historico/<str:token>/   → JSON com nome do bolsista, pendência atual e lista de sessões
-  ```
-  Precisa de **CORS habilitado** (`django-cors-headers` ou equivalente) para aceitar requisições vindas do domínio do GitHub Pages — isso é uma peça nova, não existia necessidade de CORS no projeto até agora, já que tudo era same-origin.
-
-### A construir no GitHub Pages (repositório novo ou pasta `docs/` do mesmo repo)
-- Uma página HTML simples + JS puro (ou pode reaproveitar visualmente o CSS/estrutura de `templates/core/historico.html` como referência de estilo)
-- Lê o `token` da query string (`?token=...`)
-- Faz `fetch()` para a API do PythonAnywhere
-- Renderiza a tabela de sessões, badges de tipo (normal/pendência), pendência atual — replicando a experiência visual que já existe hoje em `historico.html`
-- Trata erro de token inválido/não encontrado de forma amigável (hoje isso é um 404 do Django; na versão estática, precisa ser tratado no JS a partir do status da resposta da API)
-
-### A construir no PC local (projeto principal)
-- Disparo de sincronização (`requests.post`) após:
-  - Criar/editar um `Bolsista` no admin (nome, pendência, token)
-  - Fechar uma `SessaoTrabalho` (entrada + saída preenchidas)
-- Novas variáveis de ambiente no `.env` (via `python-decouple`, seguindo o padrão já usado):
-  ```
-  SYNC_URL=https://<usuario>.pythonanywhere.com/sincronizar/
-  SYNC_KEY=<chave secreta compartilhada>
-  ```
-- **Falha de sincronização não pode bloquear o fluxo principal** — bater ponto localmente sempre funciona, mesmo se a internet cair ou o PythonAnywhere estiver fora do ar. Tratar com try/except silencioso + log, no mínimo.
-- A rota local `/historico/<token>/` (view + template) provavelmente deixa de ser necessária no PC local, já que a experiência de histórico passa a viver inteiramente em GitHub Pages + PythonAnywhere. Avaliar remoção ou manutenção como fallback interno (ex: para o bibliotecário conferir algo rapidamente sem depender da sincronização).
+A sincronização com a nuvem envia um arquivo JSON consolidado diretamente para o repositório `eize-ponto-historico` hospedado no GitHub Pages, utilizando a API REST do próprio GitHub.
 
 ### Decisões técnicas implementadas
-1. **Retry de sincronização:** A sincronização local (`requests.post`) roda em threads separadas (`daemon=True`) via signals (`post_save`), com um timeout de 5 segundos. Falhas (sem internet) são ignoradas com log local, sem bloquear a usabilidade para a biblioteca.
-2. **Chave de correlação:** O `token` atua como chave de upsert para os Bolsistas. Para `SessaoTrabalho`, o `id` local é mapeado para um campo `id_origem` no banco remoto, evitando a complexidade de adicionar UUIDs no MVP.
-3. **Escopo do JSON:** O retorno envia dados pré-formatados (ex: `pendencia_display`, `trabalhado_display`), mantendo a API e o frontend puramente focados na exibição da informação sem recalcular horas.
-4. **CORS e Segurança:** A API no PythonAnywhere usa `django-cors-headers` restrito ao GitHub Pages. As rotas de sincronização validam o header `X-Sync-Key` contra o `.env`.
-5. **UX:** O admin Django do PC local gera e exibe a URL pública do GitHub Pages (`?token=...`) para facilitar o compartilhamento.
-
-### Organização de repositórios (decidido)
-
-O projeto passa a ser composto por **três repositórios**, cada um com responsabilidade única:
-
-1. **`eize-org/eize-ponto`** (já existe, é este repositório) — sistema principal Django, roda no PC local da biblioteca. Continua contendo tudo que já existe hoje (models, views, admin, migrações, scripts `.bat`)
-2. **`eize-org/eize-ponto-historico`** (novo) — repositório dedicado ao GitHub Pages. Contém só HTML/CSS/JS estático, sem nenhum código Python. Publicado via GitHub Pages a partir da branch principal (ou de uma pasta `docs/` dentro dele, dependendo da configuração escolhida no momento de ativar o Pages)
-3. **`eize-org/eize-ponto-api-historico`** (novo) — projeto Django enxuto que roda no PythonAnywhere. Contém só os models espelho e as rotas de sincronização/consulta (seção acima)
-
-**Por que três repositórios e não um só com pastas:** cada peça tem ciclo de deploy e ambiente de execução completamente diferentes (PC Windows local / GitHub Pages / PythonAnywhere) — misturar tudo em um repositório só dificultaria versionamento e deploy independente de cada parte. Também evita que uma mudança no sistema principal quebre acidentalmente o site público ou a API, e vice-versa.
+1. **Zero Backend (Nuvem):** A decisão de usar o PythonAnywhere foi abortada em favor da escrita direta de arquivos estáticos. Isso zera a manutenção, não expira nunca, e é 100% gratuito.
+2. **Sincronização:** Threads assíncronas no PC (`daemon=True`) formatam os dados em Base64 e enviam com `requests.put` validando o SHA.
+3. **Repositórios:** Simplificado de 3 para 2 repositórios (`eize-ponto` local e `eize-ponto-historico` remoto).
 
 ## 6. Scripts de operação (Windows, `.bat`)
 
