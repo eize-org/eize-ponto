@@ -209,7 +209,7 @@ pOnto/
 | `DJANGO_SECRET_KEY` | Chave secreta do Django (gerada no momento do setup) |
 | `DJANGO_DEBUG` | Ativa o modo debug do Django (`True` ou `False`) |
 | `ALLOWED_IPS` | IPs autorizados a acessar o sistema, separados por vírgula |
-| `GITHUB_TOKEN` | Token do GitHub com acesso ao repositório do histórico |
+| `GITHUB_TOKEN` | Token do GitHub com acesso ao repositório do histórico (Recomenda-se usar uma conta "Bot" colaboradora para segurança) |
 | `GITHUB_REPO` | Nome do repositório destino (ex: `eize-org/eize-ponto-historico`) |
 
 ## Proteção contra duplicidade

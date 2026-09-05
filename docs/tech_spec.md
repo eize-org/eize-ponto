@@ -134,6 +134,7 @@ A sincronização com a nuvem envia um arquivo JSON consolidado diretamente para
 1. **Zero Backend (Nuvem):** A decisão de usar o PythonAnywhere foi abortada em favor da escrita direta de arquivos estáticos. Isso zera a manutenção, não expira nunca, e é 100% gratuito.
 2. **Sincronização:** Threads assíncronas no PC (`daemon=True`) formatam os dados em Base64 e enviam com `requests.put` validando o SHA.
 3. **Repositórios:** Simplificado de 3 para 2 repositórios (`eize-ponto` local e `eize-ponto-historico` remoto).
+4. **Segurança do Token (Service Account):** O acesso à API do GitHub pelo PC local é feito através de um Token "Classic" permanente gerado em uma conta secundária ("bot"). Essa conta bot é convidada apenas com permissão de escrita (*Write*) ao repositório `eize-ponto-historico`. Isso garante que o token nunca expire, mas mantenha o privilégio mínimo, isolando totalmente o código-fonte principal (`eize-ponto`) de possíveis vazamentos na máquina local.
 
 ## 6. Scripts de operação (Windows, `.bat`)
 
