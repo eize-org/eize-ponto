@@ -41,6 +41,16 @@ def ponto_bolsista(request, pk):
             'mensagem': 'Entrada registrada com sucesso!',
             'sessao': SessaoTrabalhoSerializer(sessao).data,
         }, status=status.HTTP_201_CREATED)
+    elif sessao_aberta.esta_abandonada():
+        sessao_aberta.saida = timezone.now()
+        sessao_aberta.abandonada = True
+        sessao_aberta.save()
+        nova_sessao = SessaoTrabalho.objects.create(bolsista=bolsista)
+        return Response({
+            'acao': 'entrada',
+            'mensagem': f'A sessão anterior de {bolsista.nome} foi encerrada automaticamente (mais de 12h aberta) e uma nova entrada foi registrada!',
+            'sessao': SessaoTrabalhoSerializer(nova_sessao).data,
+        }, status=status.HTTP_201_CREATED)
     else:
         sessao_aberta.saida = timezone.now()
         sessao_aberta.save()
@@ -102,6 +112,18 @@ def pagina_ponto(request):
                 SessaoTrabalho.objects.create(bolsista=bolsista, tipo=tipo)
                 rotulo = 'Pagamento de pendência' if tipo == SessaoTrabalho.PENDENCIA else 'Entrada'
                 messages.success(request, f'{rotulo} de {bolsista.nome} registrada!')
+
+            elif sessao_aberta.esta_abandonada():
+                # Sessão aberta há mais de 12 horas: auto-encerra e registra nova entrada
+                sessao_aberta.saida = timezone.now()
+                sessao_aberta.abandonada = True
+                sessao_aberta.save()
+
+                SessaoTrabalho.objects.create(bolsista=bolsista, tipo=tipo)
+                messages.warning(
+                    request,
+                    f'A sessão anterior de {bolsista.nome} foi encerrada automaticamente (mais de 12h aberta) e uma nova entrada foi registrada!'
+                )
 
             elif sessao_aberta.tipo == tipo:
                 # Mesma sessão em aberto: fecha normalmente

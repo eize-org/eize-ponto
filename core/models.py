@@ -1,8 +1,10 @@
+from datetime import timedelta
 import secrets
 from django.db import models
 from django.utils import timezone
 
 MINUTOS_ESPERADOS = 240
+HORAS_LIMITE_ABANDONO = 12
 
 
 def minutos_para_horas(minutos):
@@ -62,29 +64,53 @@ class SessaoTrabalho(models.Model):
     min_trabalhados = models.IntegerField('Minutos Trabalhados', null=True, blank=True)
     diferenca_min = models.IntegerField('Diferença (min)', null=True, blank=True)
     pendencia_abatida_min = models.IntegerField('Pendência abatida (min)', null=True, blank=True)
+    abandonada = models.BooleanField('Abandonada', default=False)
+
+    def esta_abandonada(self, agora=None):
+        if self.saida is not None:
+            return self.abandonada
+        agora = agora or timezone.now()
+        return (agora - self.entrada) > timedelta(hours=HORAS_LIMITE_ABANDONO)
 
     def save(self, *args, **kwargs):
         if self.entrada and self.saida:
-            self.min_trabalhados = int((self.saida - self.entrada).total_seconds() / 60)
+            duracao_real_min = int((self.saida - self.entrada).total_seconds() / 60)
+            if self.abandonada or duracao_real_min > (HORAS_LIMITE_ABANDONO * 60):
+                self.abandonada = True
+                self.min_trabalhados = MINUTOS_ESPERADOS
 
-            if self.pendencia_abatida_min is None:
-                if self.tipo == self.PENDENCIA:
-                    # Todo o tempo trabalhado abate diretamente da pendência
-                    self.diferenca_min = None
-                    abatido = min(self.min_trabalhados, self.bolsista.pendencia_min)
-                    self.bolsista.pendencia_min -= abatido
-                    self.bolsista.save()
-                    self.pendencia_abatida_min = abatido
-                else:
-                    # Sessão normal: só abate o excedente acima das 4h
-                    self.diferenca_min = self.min_trabalhados - MINUTOS_ESPERADOS
-                    excedente = max(self.diferenca_min, 0)
-                    abatido = 0
-                    if excedente > 0 and self.bolsista.pendencia_min > 0:
-                        abatido = min(excedente, self.bolsista.pendencia_min)
+                if self.pendencia_abatida_min is None:
+                    if self.tipo == self.PENDENCIA:
+                        self.diferenca_min = None
+                        abatido = min(self.min_trabalhados, self.bolsista.pendencia_min)
                         self.bolsista.pendencia_min -= abatido
                         self.bolsista.save()
-                    self.pendencia_abatida_min = abatido
+                        self.pendencia_abatida_min = abatido
+                    else:
+                        # Sessão normal abandonada: limitada a 4h e sem saldo excedente
+                        self.diferenca_min = 0
+                        self.pendencia_abatida_min = 0
+            else:
+                self.min_trabalhados = duracao_real_min
+
+                if self.pendencia_abatida_min is None:
+                    if self.tipo == self.PENDENCIA:
+                        # Todo o tempo trabalhado abate diretamente da pendência
+                        self.diferenca_min = None
+                        abatido = min(self.min_trabalhados, self.bolsista.pendencia_min)
+                        self.bolsista.pendencia_min -= abatido
+                        self.bolsista.save()
+                        self.pendencia_abatida_min = abatido
+                    else:
+                        # Sessão normal: só abate o excedente acima das 4h
+                        self.diferenca_min = self.min_trabalhados - MINUTOS_ESPERADOS
+                        excedente = max(self.diferenca_min, 0)
+                        abatido = 0
+                        if excedente > 0 and self.bolsista.pendencia_min > 0:
+                            abatido = min(excedente, self.bolsista.pendencia_min)
+                            self.bolsista.pendencia_min -= abatido
+                            self.bolsista.save()
+                        self.pendencia_abatida_min = abatido
 
         super().save(*args, **kwargs)
 
