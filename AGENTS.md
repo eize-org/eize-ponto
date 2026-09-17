@@ -79,3 +79,17 @@ Ao trabalhar na funcionalidade de acesso remoto ao histórico, seguir o desenho 
 - Permitir edição manual de entrada/saída de sessões pelo admin
 - Remover ou enfraquecer o `IPWhitelistMiddleware` na tela de bater ponto e no admin
 - Migrar o frontend para um framework JS ou introduzir build step
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues (`gh` CLI). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Canonical triage label vocabulary. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout (`CONTEXT.md` + `docs/adr/`). See `docs/agents/domain.md`.
