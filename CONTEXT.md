@@ -29,7 +29,7 @@ Sessão de trabalho dedicada exclusivamente a quitar um débito de horas pré-ex
 _Avoid_: Hora extra, compensação, banco de horas, turno extra.
 
 **Sessão Abandonada**:
-Sessão de trabalho em que o bolsista esquece de registrar a saída e que ultrapassa o teto máximo de duração (12 horas). O tempo decorrido não é convertido em crédito irrestrito e demanda intervenção administrativa.
+Sessão de trabalho em que o bolsista esquece de registrar a saída e que ultrapassa o teto de 12 horas. No próximo clique do bolsista, ela é encerrada automaticamente com duração limitada à jornada esperada (4 horas) e marcada com destaque no painel administrativo para que o Administrador audite o ocorrido.
 _Avoid_: Ponto virado, sessão esquecida, erro de saída.
 
 ### Saldo e Jornada
