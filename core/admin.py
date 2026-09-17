@@ -1,9 +1,10 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils import timezone
 from datetime import timedelta
 from django import forms
 from django.utils.html import format_html
 from .models import Bolsista, SessaoTrabalho, horas_para_minutos, minutos_para_horas
+from .sync import sincronizar_historico_bolsista
 
 
 class FiltroSemana(admin.SimpleListFilter):
@@ -83,6 +84,7 @@ class BolsistaAdmin(admin.ModelAdmin):
     search_fields = ['nome']
     readonly_fields = ['link_historico']
     inlines = [SessaoTrabalhoInline]
+    actions = ['sincronizar_selecionados']
 
     def link_historico(self, obj):
         if not obj.pk:
@@ -90,6 +92,30 @@ class BolsistaAdmin(admin.ModelAdmin):
         url = f'https://eize-org.github.io/eize-ponto-historico/?token={obj.token}'
         return format_html('<a href="{0}" target="_blank">{0}</a>', url)
     link_historico.short_description = 'Link do histórico (pessoal e intransferível)'
+
+    @admin.action(description='Sincronizar histórico selecionado com o GitHub')
+    def sincronizar_selecionados(self, request, queryset):
+        sucessos = 0
+        erros = 0
+        for bolsista in queryset:
+            ok, _ = sincronizar_historico_bolsista(bolsista)
+            if ok:
+                sucessos += 1
+            else:
+                erros += 1
+
+        if erros == 0:
+            self.message_user(
+                request,
+                f'{sucessos} bolsista(s) sincronizado(s) com sucesso no GitHub!',
+                level=messages.SUCCESS
+            )
+        else:
+            self.message_user(
+                request,
+                f'{sucessos} sincronizado(s) com sucesso e {erros} com falha.',
+                level=messages.WARNING
+            )
 
 
 @admin.register(SessaoTrabalho)

@@ -198,6 +198,7 @@ pOnto/
 ├── setup.bat             # Configuração inicial do ambiente Windows (executar uma vez)
 ├── iniciar.bat           # Inicialização diária do servidor local
 ├── atualizar.bat         # Atualização automatizada do sistema (puxando do GitHub)
+├── sincronizar.bat       # Reconciliação em lote (reenvia histórico de todos para o GitHub)
 ├── requirements.txt      # Dependências do projeto (Django, decouple, requests)
 └── .env.example          # Template e explicação das variáveis de ambiente
 ```
