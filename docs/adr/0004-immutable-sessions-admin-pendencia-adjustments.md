@@ -1,0 +1,3 @@
+# Imutabilidade de Sessões de Trabalho e Ajustes por Pendência
+
+Permitir que administradores alterem horários de entrada e saída no painel administrativo causaria divergências silenciosas nos abatimentos e saldos calculados na conclusão do ponto. Decidimos que todas as sessões registradas são fatos históricos estritamente imutáveis (`entrada` e `saida` como campos somente leitura no admin). Erros de horário ou esquecimentos cometidos por bolsistas não são corrigidos adulterando registros passados, mas sim por meio de ajuste manual de compensação no saldo de `Pendência` do bolsista pelo administrador.

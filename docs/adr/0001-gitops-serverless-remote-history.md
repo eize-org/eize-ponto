@@ -1,0 +1,3 @@
+# Arquitetura Serverless GitOps para Histórico Remoto
+
+Os bolsistas precisavam consultar o histórico fora da rede física da biblioteca, mas serviços de hospedagem gratuita (como o PythonAnywhere) exigiam renovação manual periódica sob risco de suspensão, e planos pagos foram descartados por restrição orçamentária estrita. Decidimos eliminar qualquer servidor intermediário em nuvem: o sistema local envia arquivos JSON consolidados diretamente para o repositório `eize-ponto-historico` no GitHub Pages via REST API, usando um token com privilégio mínimo de uma conta de serviço (bot). Essa abordagem garante disponibilidade perpétua sem custos de infraestrutura ou necessidade de manutenção humana.

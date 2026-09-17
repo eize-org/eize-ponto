@@ -1,0 +1,3 @@
+# Autenticação por Restrição de Rede em vez de Login Individual
+
+Para eliminar atrito operacional para bolsistas e manter a simplicidade de uso em um terminal físico compartilhado na biblioteca, decidimos não implementar senhas ou contas de usuário para o registro de ponto. O acesso à tela principal de bater ponto e ao painel administrativo é restrito exclusivamente pela validação de endereços IP locais autorizados (`IPWhitelistMiddleware`). A responsabilidade de identificação individual recai na seleção do nome no terminal físico autorizado, enquanto o painel administrativo conta com autenticação padrão do Django.
