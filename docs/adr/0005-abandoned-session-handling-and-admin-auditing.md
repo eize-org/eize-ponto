@@ -1,0 +1,3 @@
+# Tratamento de Sessão Abandonada e Sinalização para o Administrador
+
+Quando um bolsista esquecia de registrar a saída, o próximo clique dias depois contabilizava dezenas de horas ininterruptas e zerava indevidamente o saldo de pendência. Decidimos que sessões abertas há mais de 12 horas são tratadas como abandonadas: no próximo clique do bolsista, a sessão anterior é encerrada automaticamente com duração limitada à jornada padrão de 4 horas (sem gerar abatimento excedente), a nova entrada do dia é registrada no mesmo ato e a sessão recebe sinalização visual explícita no painel administrativo para auditoria do bibliotecário. Essa regra protege o saldo devedor contra fraudes e esquecimentos sem travar o fluxo diário de registro de ponto do bolsista.
