@@ -7,10 +7,10 @@ Permitir que o Administrador (bibliotecário) audite e identifique com facilidad
 
 **Blocked by:** 01: Recuperação e auto-encerramento de Sessão Abandonada no registro de ponto
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A listagem de sessões no painel administrativo apresenta indicador/badge visual em destaque para sessões abandonadas.
-- [ ] A tabela inline de sessões na tela de edição do Bolsista exibe a sinalização visual de sessão abandonada.
-- [ ] A barra lateral de filtros do painel administrativo permite filtrar sessões por status de abandono.
-- [ ] O status de abandono da sessão é incluído na estrutura de exportação do histórico.
-- [ ] Testes automatizados validam a exibição dos badges visuais e o funcionamento do filtro no painel administrativo.
+- [x] A listagem de sessões no painel administrativo apresenta indicador/badge visual em destaque para sessões abandonadas.
+- [x] A tabela inline de sessões na tela de edição do Bolsista exibe a sinalização visual de sessão abandonada.
+- [x] A barra lateral de filtros do painel administrativo permite filtrar sessões por status de abandono.
+- [x] O status de abandono da sessão é incluído na estrutura de exportação do histórico.
+- [x] Testes automatizados validam a exibição dos badges visuais e o funcionamento do filtro no painel administrativo.

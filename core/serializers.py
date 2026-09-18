@@ -5,7 +5,7 @@ class SessaoTrabalhoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SessaoTrabalho
-        fields = ['id', 'entrada', 'saida', 'min_trabalhados', 'diferenca_min', 'mostra_diferenca',]
+        fields = ['id', 'entrada', 'saida', 'min_trabalhados', 'diferenca_min', 'mostra_diferenca', 'abandonada']
         
 class BolsistaSerializer(serializers.ModelSerializer):
     sessao_aberta = serializers.SerializerMethodField()

@@ -2,6 +2,7 @@ from datetime import timedelta
 import secrets
 from django.db import models
 from django.utils import timezone
+from django.utils.html import format_html
 
 MINUTOS_ESPERADOS = 240
 HORAS_LIMITE_ABANDONO = 12
@@ -131,6 +132,16 @@ class SessaoTrabalho(models.Model):
             return None
         return minutos_para_horas(self.pendencia_abatida_min)
     mostra_pendencia_abatida.short_description = 'Pendência abatida'
+
+    def mostra_abandonada(self):
+        if self.abandonada:
+            return format_html(
+                '<span style="color: #842029; background-color: #f8d7da; padding: 2px 8px; '
+                'border-radius: 4px; border: 1px solid #f5c2c7; font-weight: 600; font-size: 0.85em;">{}</span>',
+                '⚠️ Abandonada'
+            )
+        return '—'
+    mostra_abandonada.short_description = 'Status'
 
     class Meta:
         verbose_name = 'Sessão'
