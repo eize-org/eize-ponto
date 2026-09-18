@@ -27,7 +27,8 @@ def montar_dados_bolsista(bolsista):
             "entrada": s.entrada.isoformat() if s.entrada else None,
             "saida": s.saida.isoformat() if s.saida else None,
             "trabalhado_display": s.mostra_trabalhados(),
-            "diferenca_display": s.mostra_diferenca()
+            "diferenca_display": s.mostra_diferenca(),
+            "abandonada": s.abandonada,
         })
     return dados
 

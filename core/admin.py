@@ -72,8 +72,8 @@ class BolsistaForm(forms.ModelForm):
 class SessaoTrabalhoInline(admin.TabularInline):
     model = SessaoTrabalho
     extra = 0
-    readonly_fields = ['entrada', 'saida', 'mostra_trabalhados', 'mostra_diferenca', 'mostra_pendencia_abatida']
-    fields = ['tipo', 'entrada', 'saida', 'mostra_trabalhados', 'mostra_diferenca', 'mostra_pendencia_abatida']
+    readonly_fields = ['entrada', 'saida', 'mostra_trabalhados', 'mostra_diferenca', 'mostra_pendencia_abatida', 'mostra_abandonada']
+    fields = ['tipo', 'entrada', 'saida', 'mostra_trabalhados', 'mostra_diferenca', 'mostra_pendencia_abatida', 'mostra_abandonada']
     can_delete = False
 
 
@@ -120,7 +120,7 @@ class BolsistaAdmin(admin.ModelAdmin):
 
 @admin.register(SessaoTrabalho)
 class SessaoTrabalhoAdmin(admin.ModelAdmin):
-    list_display = ['bolsista', 'tipo', 'entrada', 'saida', 'mostra_trabalhados', 'mostra_diferenca', 'mostra_pendencia_abatida']
-    list_filter = ['bolsista', FiltroSemana, 'tipo']
+    list_display = ['bolsista', 'tipo', 'entrada', 'saida', 'mostra_trabalhados', 'mostra_diferenca', 'mostra_pendencia_abatida', 'mostra_abandonada']
+    list_filter = ['abandonada', 'bolsista', FiltroSemana, 'tipo']
     search_fields = ['bolsista__nome']
-    readonly_fields = ['entrada', 'saida', 'mostra_trabalhados', 'mostra_diferenca', 'mostra_pendencia_abatida']
+    readonly_fields = ['entrada', 'saida', 'mostra_trabalhados', 'mostra_diferenca', 'mostra_pendencia_abatida', 'mostra_abandonada']
