@@ -1,4 +1,6 @@
 @echo off
 echo Iniciando pOnto...
+echo Verificando e aplicando migracoes pendentes...
+.venv\Scripts\python manage.py migrate --no-input
 .venv\Scripts\python manage.py runserver 0.0.0.0:8000
 pause
