@@ -3,6 +3,41 @@ echo ================================
 echo      Atualizando pOnto
 echo ================================
 
+:: ---- BACKUP ----
+echo.
+echo Criando backup antes de atualizar...
+
+for /f "tokens=1-6 delims=/:. " %%a in ("%date% %time%") do (
+    set DIA=%%a
+    set MES=%%b
+    set ANO=%%c
+    set HOR=%%d
+    set MIN=%%e
+    set SEG=%%f
+)
+set PASTA_BACKUP=backup\%ANO%-%MES%-%DIA%_%HOR%-%MIN%-%SEG%
+mkdir "%PASTA_BACKUP%" 2>nul
+
+set BACKUP_OK=1
+
+if exist db.sqlite3 (
+    copy /Y db.sqlite3 "%PASTA_BACKUP%\db.sqlite3" >nul
+    echo   [OK] Banco de dados copiado.
+) else (
+    echo   [AVISO] db.sqlite3 nao encontrado, pulando.
+)
+
+if exist .env (
+    copy /Y .env "%PASTA_BACKUP%\.env" >nul
+    echo   [OK] Arquivo .env copiado.
+) else (
+    echo   [AVISO] .env nao encontrado, pulando.
+)
+
+echo   Backup salvo em: %PASTA_BACKUP%
+echo.
+:: ---- FIM DO BACKUP ----
+
 echo Baixando atualizacoes do GitHub...
 git pull origin main
 

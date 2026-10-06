@@ -46,4 +46,7 @@ static/
 .DS_Store
 Thumbs.db
 
+# Backups gerados pelo atualizar.bat
+backup/
+
 # Migrações (opcional — muitos projetos preferem versionar)
