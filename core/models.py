@@ -8,6 +8,16 @@ MINUTOS_ESPERADOS = 240
 HORAS_LIMITE_ABANDONO = 12
 
 
+def _gerar_token():
+    # token_urlsafe pode começar com '_' ou '-', que o Jekyll do GitHub Pages
+    # ignora ao gerar o site estático, tornando o arquivo inacessível via URL.
+    # Garantimos que o primeiro caractere seja sempre alfanumérico.
+    while True:
+        token = secrets.token_urlsafe(24)
+        if token[0].isalnum():
+            return token
+
+
 def minutos_para_horas(minutos):
     sinal = '-' if minutos < 0 else ''
     total = abs(minutos)
@@ -36,7 +46,7 @@ class Bolsista(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.token:
-            self.token = secrets.token_urlsafe(24)
+            self.token = _gerar_token()
         super().save(*args, **kwargs)
 
     def __str__(self):
